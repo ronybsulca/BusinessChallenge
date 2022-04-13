@@ -1,0 +1,387 @@
+---
+title: "Business Analyst Challenge - Influur"
+author: "Rony Sulca"
+date: "April 12, 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Conceptual Questions
+
+**1. We just launched the new version of the app to market. As you can probably imagine, data is growing and changing very fast. Hence, making constant monitoring of the engagement with the app a key business need.**
+**What would be the key performance indicators you would come up with as the most important to monitor engagement with the app? How often would you suggest such indicators must be monitored?**
+
+**Retention Rate** is one of the most important KPIs for monitoring engagement in a mobile app. Retention Rate should be defined as 'the percent of users who come back to the app in a specified period of time after registration.' The time intervals within which we measure this KPI will depend on what is best for our business. We are in a stage where the product is new and constantly changing. Given this, we should keep this time interval short enough to quickly track how the changes are affecting the product. Daily seasonality may show high variance in the retention rates resulting in data that is too noisy, hence, we must opt for a weekly time interval, both for the enrollment dates as well as the retention time periods.
+
+To report this KPI we should then use a Weekly Classic Retention report (see sample chart below).
+
+![Weekly Retention](images/Retention_Rate.png)
+
+We can then measure success by seeing how Week 1 retention rates perform week over week since that is usually the timeframe with the biggest churn. We can also see how long-term retention is affected over time.
+
+**Additional Metrics:**
+*Other metrics can also help us gauge engagement. We could measure the time spent on the app per user to see if there is interest in exploring or using the app's features. We can also build funnel views for the different flows that lead to conversions (brand-influence contracts), and measure how engaging each of those steps is.*
+
+
+**2. Many times a business report or dashboard is needed by different stakeholders, where they may not necessarily have the same interpretation of a specific concept. Let's take for example the concept 'active user': some stakeholders may interpret an active user as one that logs into the app with a certain frequency, while others may not consider a simple log-in as a relevant engagement. **
+**How would you propose a problem resolution strategy with the stakeholders? Which facts would you present to them?**
+
+Stakeholders often choose a specific definition of a metric because they believe it's the most useful to them. When defining a metric like **Active Users**, we must address the use cases each stakeholder has for the metric and present them with an elegant solution.
+
+The **Active Users** metric is used to indicate the traffic our mobile app has. This metric can be calculated for any period of time. It can be defined daily to gauge app activity or on a monthly/yearly basis to measure app traffic. Stakeholders who focus on reporting inbound app traffic and customer acquisition will often prefer a definition of Active Users that includes the largest possible sample. The largest sample will then indicate larger traffic and higher conversions from acquisition campaigns. This means that they will choose to label any impression (opening) of the app as an Active User. On the other hand, stakeholders who focus on measuring any of the **Conversion Rates** within the app will prefer a stricter definition of Active Users. By labeling Active Users as only those who performed a qualifying activity, these stakeholders ensure the conversion rates are only calculated from users with actual intent to find an influencer-brand connection.
+
+The resolution I would pose to the different stakeholders is the following:
+
+We will define Active Users as the set of users who have performed one of the following qualifying activities. These activities include:
+
+* Visiting the app more than once
+* Making use of the in-app search engine
+* Updating profile information
+* Making an offer (Brand-Influencer connection)
+
+The list of qualifying activities was chosen because they indicate a high likelihood of intent in our userbase. This strict definition will allow for our userbase's **transaction rate**, defined as 'transactions / active users', to look higher and give the product better optics. Further, this metric will be a more accurate representation of how effective the app is in connecting influencers to brands because it's only focusing on users with actual intent. As a result, any other conversion metric starting at Active Users will be more stable since it will not be affected by an influx of users with low intent, which may come from marketing campaigns.
+
+To drive this point across, imagine the following scenario:
+
+* An app has 80K app logins, 28K Active Users, and 2K conversions in a month. These metrics result in a monthly conversion rate of 7% using the strict definition of active users and 2.5% using the loose definition. The former metric helps more with the optics of the product.
+
+To address the needs of stakeholders who favor the loose definition, I will present them with the concept of a **"User Heartbeat"**, which represents any interaction the user has with our ecosystem (the mobile app). Thus, User Heartbeat will equate to the number of app impressions (openings). This provides stakeholders with a metric they can use to continue to report the large volume of traffic coming to our app. Furthermore, by leveraging this metric, acquisition campaigns can then show higher performance than if using Active Users. These campaigns can then be optimized for the user heartbeat.
+
+**Additional Notes: **
+*To justify why I chose "visiting the app more than once" as one of the qualifying activities, I would start by displaying a histogram of 'the # of app visits per user'. This chart will highlight the fact that most users visit the app just once (as with most apps in the market). I could then go further and focus on the users with only one app visit and make a histogram of how many of the qualifying activities (for active users) they perform. This new chart should also highlight that most of these users don't perform any qualifying activity. Therefore, by removing users with only one in-app visit (and no other qualifying activity) we are removing most of the noise in our conversion metrics.*
+
+
+**3. It is a common practice to have many systems scattered all over: one might be hosting the Influur app, and others might be hosting models needed for daily operations. This usually benefits usability over scalability. Nevertheless, data centralization is crucial for its exploitation.**
+**What should we do to centralize the data in order to display it in charts for KPI monitoring? What would you propose the data governance strategy should be?**
+
+
+To fully leverage the power of the multiple datasets that we have, we need to build data pipelines from our four systems and build a Data Governance strategy around them.
+
+To ensure the coming data can be easily used in reports from our BI tools, it needs to be cleaned and audited. We need to build alerts and filters for when data corruption might occur and rename columns if necessary for consistent definitions across business units. We then need to categorize each dataset based on the type of content it has and ensure only the relevant stakeholders have access to the necessary data. With the same definition of metrics across all datasets, we can then develop well-defined performance metrics like conversion rates for active users.
+
+
+This Data Governance strategy can be broken down into the following sections:
+
+**Database - Owned by Data Engineers.**
+
+We first need to identify the database where all of this data will be placed. Some example databases include AWS Redshift, Google's BigQuery, etc. Any of these databases will allow us to grant different levels of access to each user based on the sensitivity of the data. It should also enforce a relational-database style of storage to enable SQL querying.
+
+We then need to identify how our data users will be interacting with the data. There are three main use cases for our datasets: Analysts and Stakeholders connecting to it from our BI tool; Analysts and Engineers connecting to it through external sources like Notebooks; and Engineers who need access to the data to enable App features.
+
+In the case one or more specific App features require this data, we need to allocate a substantial amount of querying resources (e.g., nodes in Redshift) for this process. The remaining resources should then be allocated toward Analytics. If our BI tool is our main reporting environment and has the highest usage, we can allocate most of the remaining querying resources to it (the tool should have its own account when connecting to the database).
+
+
+**ETL - Owned by Data Engineers or Analysts.**
+
+We then need to build the pipeline for this data. Each dataset exists in a different system with varying ways to access its data. How we build these pipelines will depend on whether or not we use an enterprise tool for it. If so, we can integrate the data systems' APIs to the ETL tool and run tests to ensure the integrations are working correctly. If such a tool is not available, then we need to query those APIs from our own scripts. We can write these scripts in any language (Python, R, etc.) and place them on one of our servers. We can then create cronjobs to run these queries daily and update our database. We might have to use both of these methods if our ETL tool does not integrate well with one of our systems.
+
+To decouple the data cleaning from the ETL process, we will transfer this data as closest to its raw form as possible. We will only test that the transfer was successful. This will allow us to have raw logs of the data at all times for any audit. The data used for reporting will be developed in the next section.
+
+
+**Data Quality - Owned by Data Engineers & Analysts.**
+
+The Data Quality process allows us to ensure the data is usable for any analyst/stakeholder, and that the naming convention of metrics is consistent across all of our business pods.
+
+This process can be built on an enterprise tool or in scripts that live on our server. In either case, these scripts should run around 30 mins to 1 hour after the ETL scripts to ensure all of the previous day's data has arrived. The process will involve cleaning the data from duplicates, missing fields, and data corruption. The cleaned data will then be piped back into the database and will power all of the analytics reporting in the company.
+
+To start the cleaning process, we focus on consistent naming. Since all of our datasets share the same user identifier, then we first need to ensure that all datasets share the exact same name for that identifier. If not, we will rename them. We will then apply the rest of the cleaning process to all the datasets. Each of the following systems should have datasets that include unique identifier fields which will aid in our cleaning. A possible set of datasets from these systems could include:
+
+* System Hosting the App -
+The System provides data for each individual user's actions (both influencers and brands). Therefore, we can expect a dataset where the most important fields here are the user identifier, the action taken, and the timestamp.
+*Note: Preferably, we will also have an event_id that we can use to decouple rows where the source system has produced duplicates. Furthermore, it would also be useful to have a client timestamp, an event timestamp that is recorded by the app itself instead of the system that sent the data. This new type of timestamp helps in cases where the system sends a group of events in batches, and thus assigns them the same timestamp. This is most useful in funnels where each event may occur milliseconds from each other, and thus we need very granular data to organize them.*
+
+*	AI Matching Engine -
+The AI Matching Engine will provide us with information on each time a search for an influencer occurs. A dataset from this system can be expected to have important fields like the brand identifier, the event id of each specific search, the recommended influencer, and the timestamp.
+*Note: In the case that a brand can find multiple recommended influencers for one search, then we can allow the influencer id field in this dataset to be an array. If the database does not support this, then we also return one row for each influencer recommended in one search.*
+
+* User Information -
+This system provides us with a lot of useful user-identifying information. A dataset from this system should have the user identifier and the last-updated date. The last-updated date lets us see when this data was last changed, which is useful in cases where the user can make such changes at any point.
+*Note: In cases in which it is useful to know how an influencer's attributes (followers, account info, etc.) have changed over time, we can store one unique row for each time there is an update, instead of updating the existing row of data.*
+
+* Payment Information -
+This system provides us with payment information about each service that was contracted through the app. Its payments datasets should have identifiers for both parties in the transaction, the type of service, the amount, and the timestamp.
+*Note: In cases in which one service can incur multiple payments or payment attempts, then we might also want to include a Payment ID column, as well as the status of the payment (success vs failure).*
+
+
+To confirm that our data is not corrupted, we need to ensure the existence of the main fields listed above. If any of them is missing from a row, then that row should not end up in our final dataset. These fields will also help us dedupe because we should only have one row for each unique combination of them. In fact, we should build alerts for when there is missing data and/or unfilterable duplicates. This will decide if we need to remove the faulty data or find a way to clean it up. The alerts can be built inside the data cleaning scripts (or enterprise tools).
+
+
+When this process is done, the cleaned datasets will be saved into their own tables. The naming convention for these cleaned tables should be prefixed consistently. A sample set of prefixes for data coming from these four systems could be: `app_`, `ai_`, `user_`, `payment_`.
+These should update at least once per day but can be updated more frequently based on the system's cadence. In-app event-level data should have a cadence of just a few hours at most.
+
+**Data Documentation - Owned by Analysts.**
+
+To ensure future analysts (or auditors) fully understand the main reporting datasets, we need to document their structure thoroughly. This documentation needs to include the schema of the dataset, the definition of each of its fields, the data types, and the frequency of updates. We should also include details on how the transformation from raw to cleaned data occurs as well as the tools/systems we used to do so.
+
+These documents should exist for each one of our main datasets and should all live in a workspace/wiki accessible by all stakeholders. Examples of this type of workspace include Confluence, SharePoint, and Google Drive.
+
+**Data Access - Owned by Engineering & Data Leads.**
+
+Depending on the category of the data, there should be restrictions on who should be able to access it. Analysts will need to make reports on everything from App engagement to payment performance. Therefore, they should have access to all of these datasets. Meanwhile, other stakeholders should only be given access to our BI tool, or be allowed to query specific datasets. This restriction will be done through permission groups to which each user will be assigned.
+
+These permissions are especially useful when stakeholders access the data through different programs. For example, accidentally letting a stakeholder download users' payment information and link it to their general account information (and maybe even PII) is something that we need protection against.
+
+**Reporting Symmetry - Owned by Product Manager & Analysts.**
+
+Our clean data will exist in new tables that should be used for all analytics needs. Any analysis done in our BI tools, or any data being sent out for reporting, should come from these tables. We should refrain from using the original RAW data for any reporting, and leave it only for data audits or debugging. This will ensure every pod in the company calculates its KPIs based on the same data.
+
+**Example -**
+
+An example system can look as follows:
+
+* Database: Google's BigQuery.
+* Data Pipelines: R scripts running on a cronjob.
+* Data Cleaning: DBT.
+* Data Documentation: Confluence.
+* Dashboarding & Alerts: Sisense.
+
+
+## Data Questions
+
+**4. Download the attached .csv file. This database contains credit card information and transactions from multiple customers. Your task is to exploit the information contained in this database as you seem fit.**
+
+### Exploring Our dataset
+
+```{r libraries, echo=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+```
+
+Reading and Cleaning the data.
+```{r reading}
+dataset = read.csv('datasets/Business Analyst Challenge Influur.csv')
+
+names(dataset)[1] = "ORDER"
+dataset = dataset %>%
+  mutate(STATUS = if_else(
+    STATUS != "",
+    STATUS, 
+    if_else(is.na(TXN), 'NO RESPONSE', 'TRANSACTION')
+  ))
+```
+
+Breaking down the data by Funnel Step (STATUS) and Users.
+```{r aggs1, warning=FALSE, results=FALSE, message=FALSE}
+# Status Breakdown
+status_counts = dataset %>%
+  group_by(STATUS) %>%
+  summarise(counts = n(),
+            unique_users = n_distinct(ID),
+            amount = sum(TXN),
+            physical = sum(MOTIVE == 'PLASTIC'),
+            digital = sum(MOTIVE == 'DIGITAL'))
+```
+```{r}
+status_counts
+```
+
+
+```{r aggs2, warning=FALSE, message=FALSE}
+# User Breakdown
+
+users = dataset %>%
+  group_by(ID) %>%
+  summarise(card_type = if_else(sum(MOTIVE=="PLASTIC", na.rm = T)>0, "PLASTIC",
+                                if_else(sum(MOTIVE=="DIGITAL", na.rm = T)>0, "DIGITAL",
+                                        "NON_CUSTOMER")),
+            rejection_reason = max(MOTIVE[STATUS == 'REJECTED']),
+            transactions = sum(STATUS=='TRANSACTION'),
+            amount = sum(TXN, na.rm = T),
+            interest = max(INTEREST_RATE, na.rm = T),
+            yearly_cost = max(CAT, na.rm = T),
+            credit_limit = max(AMOUNT, na.rm = T),
+            delivery_score = max(DELIVERY_SCORE, na.rm = T),
+            zipcode = max(CP, na.rm = T)) %>%
+  as.data.frame(.)
+users[sapply(users, is.infinite)] <- NA
+head(users)
+```
+
+### Performance and Recommendations
+ 
+To get a good view of the performance of our credit card business we need to build an end-to-end funnel. This funnel highlights the volume of users coming into our flow as well as their drop-off points throughout our experience. This funnel view is useful for both Operations, giving us the state of each step of our flow, and for Marketing, giving us the conversion rates of our campaigns.
+ 
+We can calculate this funnel by looking at the counts of each step in our flow. However, for Marketing, it is preferred to look at the Unique Users going through the flow to calculate the drop-off points more accurately. To this end, we will use the (end-to-end) **Unique User Conversion Rate** as our main **KPI**.
+ 
+For Marketing, this rate should end at the Approval stage because this is the point at which the user finishes their interaction with the registration funnel.
+
+
+```{r funnel, echo=FALSE}
+comms_sent = filter(status_counts,
+                    STATUS == "NO RESPONSE")[["unique_users"]] +
+             filter(status_counts,
+                    STATUS == "RESPONSE")[["unique_users"]]
+new_row = list("COMM_SENT", comms_sent, comms_sent, NA, 0, 0)
+funnel = rbind(status_counts, new_row)
+funnel = funnel %>%
+  filter(STATUS %in% c("COMM_SENT", "RESPONSE",
+                      "RISK", "APPROVED", "TRANSACTION")) %>%
+  arrange(match(STATUS,
+                c("COMM_SENT", "RESPONSE",
+                  "RISK", "APPROVED", "TRANSACTION"))) %>%
+  mutate(difference = round(unique_users/lag(unique_users) * 100, 2),
+         diff_pct = paste0(as.character(difference), "%"),
+         diff_pct = ifelse(is.na(difference),"",diff_pct),
+         remaining = unique_users / max(unique_users),
+         remaining_pct = paste0(as.character(round(remaining*100,2)), "%"),
+         steps = factor(STATUS, levels = STATUS))
+```
+
+Let's start by looking at the end-to-end funnel to identify what our Conversion Rate is.
+
+
+```{r funnel_plot1, echo=FALSE}
+# Funnel Breakdown (General % Drops)
+ggplot(data = funnel, aes(x = steps, y = unique_users)) +
+  geom_bar(stat="identity", fill = "skyblue1") +
+  ylim(c(-5, 4000)) +
+  geom_text(aes(label=unique_users), vjust=-1.5) + 
+  geom_text(aes(label=remaining_pct, color = "red3"), vjust=3) +
+  ggtitle("Conversion Funnel") +
+  xlab("Steps") + ylab("Unique Users") + theme(legend.position="none")+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+```
+
+This first chart shows us the volume of unique users in our flow as well as the remaining percentage of our total at each step.
+ 
+From this, we can see that our Conversion Rate (for marketing purposes) is 45%! This is quite high for a Credit Card business (based on my experience) and demonstrates the high potential of our marketing efforts.
+ 
+Although our performance is very promising, there are always opportunities to optimize the product. To better understand which of these steps are the strongest pain points for our customers, we can utilize the same chart but instead measure the churn of each step compared to the preceding step.
+
+
+```{r funnel_plot2, echo=FALSE}
+# Funnel Breakdown (Step-Level % Drops)
+ggplot(data = funnel, aes(x = steps, y = ifelse(is.na(difference), 100, difference) )) +
+  geom_bar(stat="identity", fill = "skyblue1") +
+  ylim(c(-5, 130)) +
+  geom_text(aes(label=unique_users), vjust=-1.5) + 
+  geom_text(aes(label=diff_pct, color = "red3"), vjust=3) +
+  ggtitle("Conversion Funnel (Churn from Previous Step)") +
+  xlab("Steps") + ylab("Drop from Previous Step") + theme(legend.position="none")+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+```
+
+The two biggest pain points in our funnel are the Response and Approval Steps. The transaction step also shows some potential for improvement.
+ 
+#### Response Rate
+ 
+The response rate for our Marketing communications is ~69%. To optimize this metric, we need to improve both the targeting and the content of our campaigns. We need more Marketing data to know the design of the experiments we have run, and start tackling ways to define a more effective marketing audience. Also, we can run more experiments to identify the types of communications that result in higher response rates. This analysis is crucial but cannot be done from our current data.
+ 
+#### Approval Rate
+ 
+The approval rate is another pain point that we can optimize. Normally, the system handling the eligibility checks is very robust and has filters that product teams should not alter often. We can approach this work from two sides:
+
+1. Identify the most frequent rejection reason and target users who do not have that feature.
+2. Work with Product and Business pods to decide whether we should relax some of our eligibility rules.
+ 
+For both of these efforts, we first need to identify the breakdown of rejections.
+
+
+```{r rejections, echo=FALSE, message=FALSE}
+rejections = users %>%
+  filter(!is.na(rejection_reason)) %>%
+  group_by(rejection_reason) %>%
+  summarise(users = n_distinct(ID)) %>%
+  as.data.frame(.) %>%
+  mutate(pct = users / sum(users),
+         pct_string = paste0(
+           as.character(users), " (",
+           as.character(round(pct*100, 1)), "%)") )
+```
+```{r rejection_plot, echo=FALSE}
+ggplot(rejections, aes(x = "", y = users, fill = rejection_reason)) +
+  geom_col(color = "black") +
+  geom_text(aes(label = pct_string), size=5.5, color= "white",
+            position = position_stack(vjust = 0.5)) +
+  coord_polar("y") +
+  theme_void() + scale_fill_discrete(name = "Rejection Reason")
+
+```
+
+This chart shows us that the USAGE and MOP reasons are the most frequent amongst our users (~30% each). Based on my experience, I will assume these represent High Credit Usage and Missed Payments respectively.
+ 
+Let's focus on the first way we might be able to optimize. If we are only aiming to target users with a stellar credit history, then we should change our marketing campaigns. We can use Card Usage by region as a proxy to find locations where users with good credit might live. The following breakdown shows us the performance of the different zip codes in our data.
+
+
+```{r zipcodes, message=FALSE}
+zipcode_aggs = users %>%
+  filter(!is.na(zipcode)) %>%
+  group_by(zipcode) %>%
+  summarise(users = n_distinct(ID),
+            transaction_users = sum(transactions > 0),
+            transactions = sum(transactions),
+            user_med_spent = median(amount),
+            amount = sum(amount),
+            avg_credit_limit = mean(credit_limit),
+            avg_delivery_score = mean(delivery_score),
+            avg_interest = mean(interest),
+            avg_cost = mean(yearly_cost)) %>%
+  as.data.frame(.) %>%
+  arrange(desc(users))
+zipcode_aggs %>%
+  mutate(usage_rate = transaction_users / users,
+         avg_card_usage = transactions / transaction_users,
+         aov = amount / transactions)
+```
+
+The biggest takeaway here is that, for the most part, the performance of the users within each zip code is very consistent. They all use their cards around three times on average, and they all land around the 80% mark for their likelihood to transact after they receive their card.
+ 
+Some of the differences that are noticeable include the volume of users coming from each zip code, with areas 53100 and 44100 having the largest volumes; the median spent per transaction, with area 44620 standing out as the highest; and most importantly, the AOV (average order value), with zip code area 64000 having the largest average.
+ 
+Based on these takeaways, we could opt to just focus on acquiring users from zip codes 64000 and 44620 due to their high AOV and Median Spent respectively. But we can see there is a major shortcoming of this approach. Most of our customers come from the other zip codes, and losing them would result in a negative impact on our business. We cannot stop servicing users who spend less without wiping out a large chunk of our customer base.
+
+This leaves us with the next approach, relaxing the eligibility rules. For example, our threshold for Credit Usage can be lowered. This approach is less risky than relaxing the rules on Missed Payments because customers with high credit usage don't always represent bad borrowing habits. This approach will not hurt any cohort and will only increase the size of certain groups.
+ 
+For the next steps in this approach, we need to gather any Fraud data that we might have available to us. This will show us if our relaxation of eligibility rules is causing any loss in revenue that might override the gains in user volume.
+
+
+
+#### Transaction Rate
+
+Finally, we look at the final area of optimization, the transaction rates. One of the dimensions through which we can see this performance is the card type. We can aggregate our transaction data based on that field to see if we can improve performance by focusing on the best types.
+
+```{r cardtypes, message=FALSE}
+cardtype_aggs = users %>%
+  filter(card_type %in% c("PLASTIC", "DIGITAL")) %>%
+  group_by(card_type) %>%
+  summarise(users = n_distinct(ID),
+            transaction_users = sum(transactions > 0),
+            transactions = sum(transactions),
+            user_med_spent = median(amount),
+            amount = sum(amount, na.rm = T),
+            avg_credit_limit = mean(credit_limit),
+            avg_interest = mean(interest),
+            avg_cost = mean(yearly_cost)) %>%
+  as.data.frame(.)
+
+cardtype_aggs %>%
+  mutate(usage_rate = transaction_users / users,
+         avg_card_usage = transactions / transaction_users,
+         aov = amount / transactions)
+```
+
+
+Similar to the previous analysis, we see that users who obtain a digital card do not differ too much from those who obtain a physical card, except for in two areas: Volume and Median User Expenditure.
+ 
+Users with Digital cards have a median user expenditure that is about 40% higher than those who have Physical cards. This fact encourages two potential strategies for increasing card usage: first, focusing on digital-card users in our marketing, and two, nudging those same users to transact more often through offers.
+ 
+Since physical-card users account for the largest volume of customers, we cannot ignore them and target mostly digital-card users. This approach would result in higher card expenditure on average but our overall volume would be heavily impacted.
+ 
+Instead, we can use the second approach, encouraging the digital-card users to transact after getting approved for the credit card. From the data, we can see that the usage rate (the rate of users who transact at least once after getting their card) is very similar for both cohorts. But, the higher median expenditure for digital-card users makes this cohort more valuable. If we encourage these users to use their card, through offers like cashback and rewards, we can increase their usage rate. This then would translate into higher GMV per user than if we offered the same rewards to physical-card users. Focusing our offers on digital users will see a better return on investment.
+
+
+
+
+
+
+
+
+
+
